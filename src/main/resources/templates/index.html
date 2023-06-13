@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>SSE Example</title>
+</head>
+<body>
+<h1>SSE Example</h1>
+
+<div id="data-container">
+</div>
+
+<script th:inline="javascript">
+  var eventSource = new EventSource('/sse/subscribe');
+
+  eventSource.addEventListener('message', function(evet) {
+    var data = JSON.stringify(JSON.parse(event.data));
+    var dataContainer = document.getElementById('data-container');
+    dataContainer.innerText += data;
+  });
+</script>
+</body>
+</html>
