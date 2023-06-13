@@ -1,42 +1,60 @@
 package com.hhkbdev.springsse.sse;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import org.slf4j.Logger;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 @Service
 public class SseService {
 
-  private final SseEmitter sseEmitter;
+  private final Logger log = org.slf4j.LoggerFactory.getLogger(SseService.class);
 
-  public SseService() {
-    this.sseEmitter = new SseEmitter(Long.MAX_VALUE);
-    sseEmitter.onCompletion(() -> {
-      System.out.println("SSE connection completed");
-    });
+  private final Map<String, SseEmitter> emitters = new ConcurrentHashMap<>();
 
-    sseEmitter.onTimeout(() -> {
-      System.out.println("SSE connection timeout");
-      sseEmitter.complete();
-    });
+  public SseEmitter getSseEmitterByUserId(String userId) {
+    if (emitters.containsKey(userId)) {
+      return emitters.get(userId);
+    }
 
-    sseEmitter.onError((ex) -> {
-      System.out.println("SSE connection error: " + ex.getMessage());
-      sseEmitter.completeWithError(ex);
-    });
+    return getNewSseEmitter(userId);
   }
 
-  public SseEmitter getSseEmitter() {
-    return sseEmitter;
-  }
-
-  public void sendEventData(String id, Object data) {
+  public void sendEventData(String userId, Object data) {
     try {
-      SseEmitter.SseEventBuilder event = SseEmitter.event()
-          .id(id)
-          .data(data);
-      sseEmitter.send(event);
+      SseEmitter sseEmitter = emitters.get(userId);
+      if (sseEmitter != null) {
+        sseEmitter.send(data);
+      }
+
     } catch (Exception e) {
       e.printStackTrace();
     }
+  }
+
+  private SseEmitter getNewSseEmitter(String userId) {
+    SseEmitter sseEmitter = new SseEmitter(Long.MAX_VALUE);
+    sseEmitter.onCompletion(() -> {
+      log.info("SSE connection closed");
+      removeEmitter(userId);
+    });
+
+    sseEmitter.onTimeout(() -> {
+      log.info("SSE connection timed out");
+      removeEmitter(userId);
+    });
+
+    sseEmitter.onError(ex -> {
+      log.info("SSE connection error: {}", ex.getMessage());
+      removeEmitter(userId);
+    });
+
+    emitters.put(userId, sseEmitter);
+    return sseEmitter;
+  }
+
+  private void removeEmitter(String userId) {
+    emitters.remove(userId);
   }
 }

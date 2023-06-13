@@ -11,9 +11,9 @@
 </div>
 
 <script th:inline="javascript">
-  var eventSource = new EventSource('/sse/subscribe');
+  var eventSource = new EventSource('/sse/subscribe/test');
 
-  eventSource.addEventListener('message', function(evet) {
+  eventSource.addEventListener('message', function(event) {
     var data = JSON.stringify(JSON.parse(event.data));
     var dataContainer = document.getElementById('data-container');
     dataContainer.innerText += data;
