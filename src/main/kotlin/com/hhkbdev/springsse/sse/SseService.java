@@ -8,7 +8,6 @@ public class SseService {
 
   private final SseEmitter sseEmitter;
 
-
   public SseService() {
     this.sseEmitter = new SseEmitter(Long.MAX_VALUE);
     sseEmitter.onCompletion(() -> {
@@ -30,10 +29,10 @@ public class SseService {
     return sseEmitter;
   }
 
-  public void sendEventData(String data) {
+  public void sendEventData(String id, Object data) {
     try {
       SseEmitter.SseEventBuilder event = SseEmitter.event()
-          .name("event")
+          .id(id)
           .data(data);
       sseEmitter.send(event);
     } catch (Exception e) {
